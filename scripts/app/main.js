@@ -5,10 +5,10 @@
 // except for 'app' ones, which are in a sibling
 // directory.
 requirejs.config({
-    baseUrl: 'lib',
-    paths: {
-        app: '../app'
+    baseUrl: 'app',
+    paths : {
+        'lib': '../lib'
     }
 });
 
-requirejs(['app/util']);
+requirejs(['./tessellation']);
