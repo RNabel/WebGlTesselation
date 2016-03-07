@@ -44,5 +44,9 @@ define(function (require) {
         return this._storage[i];
     };
 
+    Storage.prototype.setItem = function (i, value) {
+        this._storage[i] = value;
+    };
+
     return Storage;
 });

@@ -10,6 +10,10 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
         isWireFrame: true,
         triangles: [],
         color: [Math.random(), Math.random(), Math.random(), 1], // Format: r, g, b, a.
+        angle: 0,
+        tesselationCoeff : 0.5,
+        storage: Storage(1),
+        mappedStorage: Storage(1),
 
         /**
          * Set the colour to draw all triangles in. All values input in range (0, 255)
@@ -66,22 +70,31 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
         convertVertexArray: function () {
             this.triangles = [];
 
-            for (var i = 0; i < this.storage.getLength(); i += 2) {
-                var nextVec = mv.vec2(this.storage.getItem(i), this.storage.getItem(i + 1));
+            this.applyRotation(this.mappingFunctions.nonTesselatedTwist);
+
+            for (var i = 0; i < this.mappedStorage.getLength(); i += 2) {
+                var nextVec = mv.vec2(this.mappedStorage.getItem(i), this.mappedStorage.getItem(i + 1));
                 this.triangles.push(nextVec);
             }
         },
 
+        /**
+         * Initialise all fields.
+         */
         init: function () {
             // Register triangles.
-            TriangleHelper.setTesselationRate(1);
-            TriangleHelper.registerTriangle(0.8, 0, 0, 0);
+            this.setTesselationRate(1);
+            this.setRotationAngle(10);
+            this.registerTriangle(0.8, 0, 0, 0);
             // Set colour.
-            TriangleHelper.setColor(100, 120, 255);
+            this.setColor(100, 120, 255);
 
-            TriangleHelper.drawTriangles();
+            this.drawTriangles();
         },
 
+        /**
+         * Set up all WebGL buffers, and invoke the render method.
+         */
         drawTriangles: function () {
             // Create converted triangles array.
             this.convertVertexArray();
@@ -120,6 +133,9 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
             TriangleHelper.render();
         },
 
+        /**
+         * Renders elements saved in required WebGL buffers.
+         */
         render: function () {
             gl.clear(gl.COLOR_BUFFER_BIT);
             var drawMode = gl.TRIANGLES;
@@ -140,18 +156,74 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
             this.maxDepth = ratio;
 
             // TODO update the size of the storage to be created
-            this.storage = new Storage(4);
+            var size = 4;
+            this.storage = new Storage(size);
+            this.mappedStorage = new Storage(size);
+        },
+
+        /**
+         * Set the angle at which all points are rotated.
+         * @param angle {number} The angle in degrees
+         * @param [isRadians] {boolean} If true, angle is in radians, if false angle is in degrees.
+         */
+        setRotationAngle: function (angle, isRadians) {
+            // Convert angle to radians.
+            if (isRadians === true) {
+                this.angle = angle;
+            } else {
+                this.angle = 180 * angle / Math.PI;
+            }
         },
 
         registerTriangle: function (scale, xCoord, yCoord, rotation) {
             this.createVertexArray(scale, xCoord, yCoord, rotation);
             //TriangleHelper.triangles = TriangleHelper.triangles.concat(vertices);
+        },
+
+        applyRotation: function (mappingFunction) {
+            // Apply mappingFunction to each coordinate pair.
+            for (var i = 0; i < this.storage.getLength(); i += 2) {
+                var left = this.storage.getItem(i),
+                    right = this.storage.getItem(i + 1);
+
+                // Map the value.
+                var mappedCoord = mappingFunction(left, right);
+                left = mappedCoord[0];
+                right = mappedCoord[1];
+
+                // Write value back to rotationStorage.
+                this.mappedStorage.setItem(i, left);
+                this.mappedStorage.setItem(i+1, right);
+            }
+        },
+
+        /**
+         * Functions used to 'twist' the original points.
+         * Adapted from the Practical slides.
+         */
+        mappingFunctions: {
+            nonTesselatedTwist: function (left, right) {
+                var newLeft = left * Math.cos(this.angle) - right * Math.sin(this.angle),
+                    newRight = left * Math.sin(this.angle) + right * Math.cos(this.angle);
+
+                return [newLeft, newRight];
+            },
+
+            tesselatedTwist: function (left, right) {
+                var distance = Math.sqrt(left * left + right * right),
+                    coeff = distance * this.tesselationCoeff;
+                var newLeft = left * Math.cos(coeff * this.angle) - right * Math.sin(coeff * this.angle),
+                    newRight = left * Math.sin(coeff * this.angle) + right * Math.cos(coeff * this.angle);
+
+                return [newLeft, newRight];
+            }
         }
     };
 
     TriangleHelper = _.bindAll(TriangleHelper, Object.getOwnPropertyNames(TriangleHelper).filter(function (p) {
         return typeof TriangleHelper[p] === 'function';
     }));
-
+    TriangleHelper.mappingFunctions.nonTesselatedTwist = TriangleHelper.mappingFunctions.nonTesselatedTwist.bind(TriangleHelper);
+    TriangleHelper.mappingFunctions.tesselatedTwist = TriangleHelper.mappingFunctions.tesselatedTwist.bind(TriangleHelper);
     TriangleHelper.init();
 });
