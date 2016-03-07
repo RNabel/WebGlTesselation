@@ -7,7 +7,7 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils"], function (
     console.log(storage);
 
     var TriangleHelper = {
-        isWireFrame: false,
+        isWireFrame: true,
         triangles: [],
         color: [Math.random(), Math.random(), Math.random(), 1], // Format: r, g, b, a.
 
@@ -43,10 +43,10 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils"], function (
             var middleToTopCornerLength = 0.5 * scale * ( Math.sqrt(3) - 0.5 ),
                 topXCoord = xCoord + middleToTopCornerLength * Math.sin(rotation),
                 topYCoord = yCoord + middleToTopCornerLength * Math.cos(rotation),
-                leftXCoord = xCoord + middleToTopCornerLength * Math.sin(rotation + 2 * Math.PI / 3),
-                leftYCoord = yCoord + middleToTopCornerLength * Math.cos(rotation + 2 * Math.PI / 3),
-                rightXCoord = xCoord + middleToTopCornerLength * Math.sin(rotation + 4 * Math.PI / 3),
-                rightYCoord = yCoord + middleToTopCornerLength * Math.cos(rotation + 4 * Math.PI / 3);
+                rightXCoord = xCoord + middleToTopCornerLength * Math.sin(rotation + 2 * Math.PI / 3),
+                rightYCoord = yCoord + middleToTopCornerLength * Math.cos(rotation + 2 * Math.PI / 3),
+                leftXCoord = xCoord + middleToTopCornerLength * Math.sin(rotation + 4 * Math.PI / 3),
+                leftYCoord = yCoord + middleToTopCornerLength * Math.cos(rotation + 4 * Math.PI / 3);
             //leftXCoord = xCoord - 0.5 * scale,
             //leftYCoord = yCoord - 0.25 * scale,
             //rightYCoord = yCoord - 0.25 * scale,
@@ -54,15 +54,15 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils"], function (
 
             return [
                 mv.vec2(topXCoord, topYCoord),
+                mv.vec2(rightXCoord, rightYCoord),
                 mv.vec2(leftXCoord, leftYCoord),
-                mv.vec2(rightXCoord, rightYCoord)
+                mv.vec2(topXCoord, topYCoord)
             ]
         },
 
         init: function () {
             // Register triangles.
-            TriangleHelper.registerTriangle(1.4, 0.5, 0.5, 30);
-            TriangleHelper.registerTriangle(3, -0.5, -0.5, 50);
+            TriangleHelper.registerTriangle(0.8, 0, 0, 0);
 
             // Set colour.
             TriangleHelper.setColor(100, 120, 255);
@@ -107,15 +107,13 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils"], function (
 
         render: function () {
             gl.clear(gl.COLOR_BUFFER_BIT);
-            if (TriangleHelper.isWireFrame) {
-                gl.drawArrays(gl.LINE_STRIP, 0, TriangleHelper.triangles.length);
-            } else {
-                gl.drawArrays(gl.TRIANGLES, 0, TriangleHelper.triangles.length);
-            }
-        },
+            var drawMode = gl.TRIANGLES;
 
-        clearTriangles: function () {
-            TriangleHelper.triangles = [];
+            if (TriangleHelper.isWireFrame) { // Change drawing mode if wire frame is required.
+                drawMode = gl.LINE_STRIP;
+            }
+
+            gl.drawArrays(drawMode, 0, TriangleHelper.triangles.length);
         },
 
         registerTriangle: function (scale, xCoord, yCoord, rotation) {
