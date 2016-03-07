@@ -7,6 +7,7 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils"], function (
     console.log(storage);
 
     var TriangleHelper = {
+        isWireFrame: false,
         triangles: [],
         color: [Math.random(), Math.random(), Math.random(), 1], // Format: r, g, b, a.
 
@@ -106,8 +107,11 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils"], function (
 
         render: function () {
             gl.clear(gl.COLOR_BUFFER_BIT);
-            /** The changes below have been adapted from [WebGL Fundamentals]{@link http://webglfundamentals.org/webgl/lessons/webgl-fundamentals.html}*/
-            gl.drawArrays(gl.TRIANGLES, 0, TriangleHelper.triangles.length);
+            if (TriangleHelper.isWireFrame) {
+                gl.drawArrays(gl.LINE_STRIP, 0, TriangleHelper.triangles.length);
+            } else {
+                gl.drawArrays(gl.TRIANGLES, 0, TriangleHelper.triangles.length);
+            }
         },
 
         clearTriangles: function () {
