@@ -180,6 +180,18 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
             //TriangleHelper.triangles = TriangleHelper.triangles.concat(vertices);
         },
 
+        /**
+         * Mapping function.
+         * @callback mappingFunction
+         * @param left {number} The left (or x) coordinate.
+         * @param right {number} The right (or y) coordinate.
+         * @return {number[]} The mapped coordinate.
+         * @lends mappingFunction
+         */
+        /**
+         * Apply the mapping function to each coordinate pair in the storage object, and store it in the mappedStorage Array.
+         * @param mappingFunction {mappingFunction} A function taking two number
+         */
         applyRotation: function (mappingFunction) {
             // Apply mappingFunction to each coordinate pair.
             for (var i = 0; i < this.storage.getLength(); i += 2) {
@@ -202,6 +214,10 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
          * Adapted from the Practical slides.
          */
         mappingFunctions: {
+            /**
+             * Rotate all points by same angle.
+             * @type mappingFunction
+             */
             nonTesselatedTwist: function (left, right) {
                 var newLeft = left * Math.cos(this.angle) - right * Math.sin(this.angle),
                     newRight = left * Math.sin(this.angle) + right * Math.cos(this.angle);
@@ -209,6 +225,10 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
                 return [newLeft, newRight];
             },
 
+            /**
+             * Rotate all points by angle proportional to distance from center.
+             * @type mappingFunction
+             */
             tesselatedTwist: function (left, right) {
                 var distance = Math.sqrt(left * left + right * right),
                     coeff = distance * this.tesselationCoeff;
