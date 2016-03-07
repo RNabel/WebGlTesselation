@@ -15,11 +15,33 @@ define(function (require) {
      * @returns {int} The coordinate's component.
      */
     Storage.prototype.get = function (i, j, isLeft) {
-        var layerOffset = (i + 1) * i / 2;
-        var index = (layerOffset + j) * 2;
+        var index = this._getElementIndex(i, j);
         index += (isLeft) ? 0 : 1;
 
         return this._storage[index];
+    };
+
+    Storage.prototype.set = function (i, j, x, y) {
+        var indexLeft = this._getElementIndex(i, j);
+        this._storage[indexLeft] = x;
+        this._storage[indexLeft + 1] = y;
+    };
+
+    Storage.prototype._getLayerOffset = function (i) {
+        return (i + 1) * i;
+    };
+
+    Storage.prototype._getElementIndex = function (i, j) {
+        var layerOffset = this._getLayerOffset(i);
+        return layerOffset + 2 * j;
+    };
+
+    Storage.prototype.getLength = function () {
+        return this._storage.length;
+    };
+
+    Storage.prototype.getItem = function (i) {
+        return this._storage[i];
     };
 
     return Storage;

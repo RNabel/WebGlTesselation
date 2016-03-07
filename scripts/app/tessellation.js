@@ -1,7 +1,7 @@
 /**
  * Created by robin on 06/03/16.
  */
-define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils"], function (Storage, initShaders, mv, webgl_utils) {
+define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash"], function (Storage, initShaders, mv, webgl_utils, _) {
     var storage = new Storage(10);
     console.log("tessellation loaded.");
     console.log(storage);
@@ -40,30 +40,42 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils"], function (
                 rotation *= (Math.PI / 180 )
             }
 
+            // Create outer vertices.
             var middleToTopCornerLength = 0.5 * scale * ( Math.sqrt(3) - 0.5 ),
                 topXCoord = xCoord + middleToTopCornerLength * Math.sin(rotation),
                 topYCoord = yCoord + middleToTopCornerLength * Math.cos(rotation),
-                rightXCoord = xCoord + middleToTopCornerLength * Math.sin(rotation + 2 * Math.PI / 3),
-                rightYCoord = yCoord + middleToTopCornerLength * Math.cos(rotation + 2 * Math.PI / 3),
-                leftXCoord = xCoord + middleToTopCornerLength * Math.sin(rotation + 4 * Math.PI / 3),
-                leftYCoord = yCoord + middleToTopCornerLength * Math.cos(rotation + 4 * Math.PI / 3);
+                leftXCoord = xCoord + middleToTopCornerLength * Math.sin(rotation + 2 * Math.PI / 3),
+                leftYCoord = yCoord + middleToTopCornerLength * Math.cos(rotation + 2 * Math.PI / 3),
+                rightXCoord = xCoord + middleToTopCornerLength * Math.sin(rotation + 4 * Math.PI / 3),
+                rightYCoord = yCoord + middleToTopCornerLength * Math.cos(rotation + 4 * Math.PI / 3);
             //leftXCoord = xCoord - 0.5 * scale,
             //leftYCoord = yCoord - 0.25 * scale,
             //rightYCoord = yCoord - 0.25 * scale,
             //rightXCoord = xCoord + 0.5 * scale;
 
-            return [
-                mv.vec2(topXCoord, topYCoord),
-                mv.vec2(rightXCoord, rightYCoord),
-                mv.vec2(leftXCoord, leftYCoord),
-                mv.vec2(topXCoord, topYCoord)
-            ]
+            // Store outer vertices to storage. TODO finish
+            this.storage.set(0, 0, topXCoord, topYCoord);
+            this.storage.set(1, 1, rightXCoord, rightYCoord);
+            this.storage.set(1, 0, leftXCoord, leftYCoord);
+        },
+
+        /**
+         * Converts the storage array into a vec2 array for later drawing.
+         * @returns {vec2[]}
+         */
+        convertVertexArray: function () {
+            this.triangles = [];
+
+            for (var i = 0; i < this.storage.getLength(); i += 2) {
+                var nextVec = mv.vec2(this.storage.getItem(i), this.storage.getItem(i + 1));
+                this.triangles.push(nextVec);
+            }
         },
 
         init: function () {
             // Register triangles.
+            TriangleHelper.setTesselationRate(1);
             TriangleHelper.registerTriangle(0.8, 0, 0, 0);
-
             // Set colour.
             TriangleHelper.setColor(100, 120, 255);
 
@@ -71,6 +83,9 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils"], function (
         },
 
         drawTriangles: function () {
+            // Create converted triangles array.
+            this.convertVertexArray();
+
             var canvas = document.getElementById("gl-canvas");
             gl = webgl_utils.setupWebGL(canvas);
             if (!gl) {
@@ -116,11 +131,27 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils"], function (
             gl.drawArrays(drawMode, 0, TriangleHelper.triangles.length);
         },
 
+        /**
+         * Set the rate at which tessellation should happen. 1 denotes no additonal tesselation,
+         *          2 one halving of all sides, etc.
+         * @param ratio {int} The multiple of how many times the triangle should be tesselated.
+         */
+        setTesselationRate: function (ratio) {
+            this.maxDepth = ratio;
+
+            // TODO update the size of the storage to be created
+            this.storage = new Storage(4);
+        },
+
         registerTriangle: function (scale, xCoord, yCoord, rotation) {
-            var vertices = TriangleHelper.createVertexArray(scale, xCoord, yCoord, rotation);
-            TriangleHelper.triangles = TriangleHelper.triangles.concat(vertices);
+            this.createVertexArray(scale, xCoord, yCoord, rotation);
+            //TriangleHelper.triangles = TriangleHelper.triangles.concat(vertices);
         }
     };
+
+    TriangleHelper = _.bindAll(TriangleHelper, Object.getOwnPropertyNames(TriangleHelper).filter(function (p) {
+        return typeof TriangleHelper[p] === 'function';
+    }));
 
     TriangleHelper.init();
 });
