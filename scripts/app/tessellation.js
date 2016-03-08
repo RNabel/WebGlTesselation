@@ -65,7 +65,7 @@ define(["./storage", "./util", "lib/initShaders", "lib/MV", "lib/webgl-utils", "
                 //rightYCoord = yCoord - 0.25 * scale,
                 //rightXCoord = xCoord + 0.5 * scale;
 
-                // Store outer vertices to storage. TODO finish
+                // Store outer vertices to storage.
                 var maxLayer = this.storage.getMaxLayerIndex();
                 this.storage.set(0, 0, topXCoord, topYCoord);
                 this.storage.set(maxLayer, 0, leftXCoord, leftYCoord);
@@ -77,7 +77,7 @@ define(["./storage", "./util", "lib/initShaders", "lib/MV", "lib/webgl-utils", "
 
             /**
              * Create the tessellation triangles.
-             * IMPORTANT: It is assumed that each vertex is halved at each tessellation step. TODO TEST THIS.
+             * IMPORTANT: It is assumed that each vertex is halved at each tessellation step.
              */
             tessellateVertexArray: function () {
                 // Get corner points.
@@ -308,11 +308,28 @@ define(["./storage", "./util", "lib/initShaders", "lib/MV", "lib/webgl-utils", "
                 var program = initShaders(gl, "vertex-shader", "fragment-shader");
                 gl.useProgram(program);
 
-                // Set random colour.
-                var colorLoc = gl.getUniformLocation(program, "u_color"),
-                    colorSetting = TriangleHelper.color;
-                gl.uniform4f(colorLoc, colorSetting[0], colorSetting[1], colorSetting[2], colorSetting[3]);
+                program.vertexColorAttribute = gl.getAttribLocation(program, "aVertexColor");
+                gl.enableVertexAttribArray(program.vertexColorAttribute);
 
+                var colors = [];
+
+                for (var i = 0; i < TriangleHelper.triangles.length; i++) {
+                    // Calculate distance to origin.
+                    var currentT = TriangleHelper.triangles[i];
+                    var dist = Math.sqrt(currentT[0] * currentT[0] + currentT[1] * currentT[1] );
+                    colors.push(dist * this.color[0], dist * this.color[1], dist * this.color[2], 1.0);
+                }
+
+                pointsColorBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, pointsColorBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+                pointsColorBuffer.itemSize = 4;
+                pointsColorBuffer.numItems = 3;
+
+                //// Set random colour.
+                //var colorLoc = gl.getUniformLocation(program, "u_color"),
+                //    colorSetting = TriangleHelper.color;
+                //gl.uniform4f(colorLoc, colorSetting[0], colorSetting[1], colorSetting[2], colorSetting[3]);
 
                 // Load the data into the GPU.
                 var bufferId = gl.createBuffer();
@@ -320,10 +337,15 @@ define(["./storage", "./util", "lib/initShaders", "lib/MV", "lib/webgl-utils", "
                 gl.bufferData(gl.ARRAY_BUFFER, mv.flatten(TriangleHelper.triangles),
                     gl.STATIC_DRAW);
 
+
                 // Associate shader variables with our data buffer.
                 var vPosition = gl.getAttribLocation(program, "vPosition");
                 gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
                 gl.enableVertexAttribArray(vPosition);
+
+                // COLOURS!!!
+                gl.bindBuffer(gl.ARRAY_BUFFER, pointsColorBuffer);
+                gl.vertexAttribPointer(program.vertexColorAttribute, pointsColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
                 TriangleHelper.render();
             },
@@ -339,7 +361,7 @@ define(["./storage", "./util", "lib/initShaders", "lib/MV", "lib/webgl-utils", "
                     drawMode = gl.LINE_STRIP;
                 }
 
-                gl.drawArrays(drawMode, 0, TriangleHelper.triangles.length);
+                gl.drawArrays(drawMode, 0, TriangleHelper.triangles.length)
             },
 
             /**
@@ -353,7 +375,7 @@ define(["./storage", "./util", "lib/initShaders", "lib/MV", "lib/webgl-utils", "
                 var size = (this.maxDepth + 1) * (this.maxDepth + 2) / 2;
                 this.storage = new Storage(size);
                 this.mappedStorage = new Storage(size);
-                this.createVertexArray(); // FIXME
+                this.createVertexArray();
             },
 
             /**

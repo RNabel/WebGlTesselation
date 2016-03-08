@@ -7,35 +7,21 @@
         attribute vec4 vPosition;
         attribute vec4 aVertexColor;
 
+        varying vec4 vColor;
+
         void main(){
-         gl_Position = vPosition;
+             gl_Position = vPosition;
+             vColor = aVertexColor;
         }
-
-
-
-
-
-
-
-
-
     </script>
     <script id="fragment-shader" type="x-shader/x-fragment">
         precision mediump float;
-        uniform vec4 u_color;
+//        uniform vec4 u_color;
+        varying vec4 vColor;
 
         void main(){
-            gl_FragColor = u_color;
+            gl_FragColor = vColor;
         }
-
-
-
-
-
-
-
-
-
     </script>
 
     <!--Import Google Icon Font-->
@@ -96,11 +82,10 @@
             </p>
             <form>
                 <p class="range-field">
-                    <input type="range" id="rotationAngle" min="0" max="720" value="0"/>
+                    <input type="range" id="rotationAngle" min="0" max="1440" value="0"/>
                     <label id="rotAngleLabel">Current rotation angle: 0</label>
                 </p>
             </form>
-
 
             <div id="rotationCoefficientForm">
                 <p>
