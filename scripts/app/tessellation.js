@@ -7,7 +7,7 @@ define(["./storage", "./util", "lib/initShaders", "lib/MV", "lib/webgl-utils", "
         triangles: [],
         color: [Math.random(), Math.random(), Math.random(), 1], // Format: r, g, b, a.
         angle: 0,
-        tesselationCoeff: 0.5,
+        tessellationCoefficient: 0.001,
         storage: Storage(1),
         mappedStorage: Storage(1),
 
@@ -75,27 +75,11 @@ define(["./storage", "./util", "lib/initShaders", "lib/MV", "lib/webgl-utils", "
             var left = [maxLayerIndex, 0],
                 right = [maxLayerIndex, maxLayerIndex];
 
-            var currentTriangles = [[top, left, right]];
-            var currentDepth = 1;
-
-            //console.log("---------------------- " + currentDepth + " --------------------------------");
-            //for (var j = 0; j < currentTriangles.length; j++) {
-            //    var triangle = currentTriangles[j],
-            //        output = "";
-            //
-            //    for (var k = 0; k < triangle.length; k++) {
-            //        var point = triangle[k];
-            //        output += (k) ? ", " : "";
-            //        output += "(" + point[0] + ", " + point[1] + ")";
-            //    }
-            //
-            //    console.log(output);
-            //}
             this.tessellate(left, right, top, this.storage, 1, Math.log2(this.maxDepth));
         },
 
         /**
-         * Tessellates a given triangle recursively
+         * Tessellates a given triangle recursively.
          * @param l {int[]}
          * @param r {int[]}
          * @param c {int[]}
@@ -141,7 +125,7 @@ define(["./storage", "./util", "lib/initShaders", "lib/MV", "lib/webgl-utils", "
         convertVertexArray: function () {
             this.triangles = [];
 
-            this.applyRotation(this.mappingFunctions.nonTessellatedTwist, this.storage, this.mappedStorage);
+            this.applyRotation(this.mappingFunctions.tesselatedTwist, this.storage, this.mappedStorage);
             //this.mappedStorage = this.storage;
 
             // Create path. path variable is array of x and y components, adding first point. Working correctly.
@@ -375,7 +359,7 @@ define(["./storage", "./util", "lib/initShaders", "lib/MV", "lib/webgl-utils", "
              */
             tesselatedTwist: function (left, right) {
                 var distance = Math.sqrt(left * left + right * right),
-                    coeff = distance * this.tesselationCoeff;
+                    coeff = distance * this.tessellationCoefficient;
                 var newLeft = left * Math.cos(coeff * this.angle) - right * Math.sin(coeff * this.angle),
                     newRight = left * Math.sin(coeff * this.angle) + right * Math.cos(coeff * this.angle);
 
