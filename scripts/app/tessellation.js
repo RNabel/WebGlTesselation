@@ -125,9 +125,10 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
         convertVertexArray: function () {
             this.triangles = [];
 
-            this.applyRotation(this.mappingFunctions.nonTessellatedTwist);
+            //this.applyRotation(this.mappingFunctions.nonTessellatedTwist);
+            this.mappedStorage = this.storage;
 
-            // Create path. path variable is array of x and y components, adding first point.
+            // Create path. path variable is array of x and y components, adding first point. Working correctly.
             var path = [this.storage.get(0, 0, true), this.storage.get(0, 0, false)];
             var lastIJ = [0, 0];
             for (var i = 0; i < this.storage.getMaxLayerIndex(); i++) {
@@ -143,7 +144,7 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
 
             // If last stage to be executed was stage I then horizontal the horizontal stroke is missing.
             if (!useStageI) {
-                path.push(this.storage.get(i, 0, true), this.storage.get(i, 0, false))
+                path.push(this.mappedStorage.get(i, 0, true), this.mappedStorage.get(i, 0, false))
             }
 
             for (i = 0; i < path.length; i += 2) {
@@ -220,7 +221,7 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
          */
         init: function () {
             // Register triangles.
-            this.setTesselationRate(1);
+            this.setTesselationRate(2);
             this.setRotationAngle(0);
             this.registerTriangle(0.8, 0, 0, 0);
             // Set colour.
