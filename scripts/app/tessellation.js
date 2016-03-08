@@ -197,7 +197,8 @@ define(["./storage", "./util", "lib/initShaders", "lib/MV", "lib/webgl-utils", "
              * @returns {int[]} The last connected point.
              */
             stageII: function (i, j, path, storage) {
-                // Add current (i, j) to path.
+                // Add point above current (i, j) and (i, j) itself, to path.
+                path.push(storage.get(i - 1, j, true), storage.get(i - 1, j, false));
                 path.push(storage.get(i, j, true), storage.get(i, j, false));
 
                 // Max j (i.e. element index) in layer with index i is i.
@@ -218,7 +219,7 @@ define(["./storage", "./util", "lib/initShaders", "lib/MV", "lib/webgl-utils", "
          */
         init: function () {
             // Register triangles.
-            this.setTesselationRate(5);
+            this.setTesselationRate(4);
             this.setRotationAngle(20);
             this.registerTriangle(0.8, 0, 0, 0);
             // Set colour.
