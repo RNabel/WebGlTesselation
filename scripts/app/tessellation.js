@@ -144,7 +144,11 @@ define(["./storage", "./util", "lib/initShaders", "lib/MV", "lib/webgl-utils", "
 
             // If last stage to be executed was stage I then horizontal the horizontal stroke is missing.
             if (!useStageI) {
-                path.push(this.mappedStorage.get(i, 0, true), this.mappedStorage.get(i, 0, false))
+                var maxIndex = this.mappedStorage.getMaxLayerIndex();
+                for (var j = maxIndex; j >= 0; j--) {
+                    var point = this.mappedStorage.get(maxIndex, j);
+                    path.push(point[0], point[1]);
+                }
             }
 
             for (i = 0; i < path.length; i += 2) {
