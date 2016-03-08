@@ -37,7 +37,23 @@ define(function (require) {
 
     // TODO create getter for value pair.
 
+    /**
+     * Set the value at position (i, j) to (x, y).
+     * @param i {int | int[]} Layer index or array of layer and element index.
+     * @param j {int | int[]} Element index or array of x coordinate and y coordinate.
+     * @param [x] {int} Rendered x coordinate of point.
+     * @param [y] {int} Rendered y coordinate of point.
+     */
     Storage.prototype.set = function (i, j, x, y) {
+        // Check for special case, if i and j both of type array then j contains values for (x, y), and i for (i, j).
+        if (_.isArray(i) && _.isArray(j)) {
+            x = j[0];
+            y = j[1];
+
+            j = i[1];
+            i = i[0];
+        }
+
         var indexLeft = this._getElementIndex(i, j);
         this._storage[indexLeft] = x;
         this._storage[indexLeft + 1] = y;

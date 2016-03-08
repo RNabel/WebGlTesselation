@@ -1,11 +1,7 @@
 /**
  * Created by robin on 06/03/16.
  */
-define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash"], function (Storage, initShaders, mv, webgl_utils, _) {
-    var storage = new Storage(10);
-    console.log("tessellation loaded.");
-    console.log(storage);
-
+define(["./storage", "./util", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash"], function (Storage, util, initShaders, mv, webgl_utils, _) {
     var TriangleHelper = {
         isWireFrame: true,
         triangles: [],
@@ -79,43 +75,63 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
             var left = [maxLayerIndex, 0],
                 right = [maxLayerIndex, maxLayerIndex];
 
-            var currentVerticesToSplit = [[top, left], [top, right], [left, right]];
-
+            var currentTriangles = [[top, left, right]];
             var currentDepth = 1;
 
-            while (currentDepth < this.maxDepth) {
-                var newVerticesToSplit = [];
-                for (var i = 0; i < currentVerticesToSplit.length; i++) {
-                    // Get current values.
-                    var currentVertex = currentVerticesToSplit[i],
-                        currentBeginning = currentVertex[0],
-                        currentEnd = currentVertex[1];
+            //console.log("---------------------- " + currentDepth + " --------------------------------");
+            //for (var j = 0; j < currentTriangles.length; j++) {
+            //    var triangle = currentTriangles[j],
+            //        output = "";
+            //
+            //    for (var k = 0; k < triangle.length; k++) {
+            //        var point = triangle[k];
+            //        output += (k) ? ", " : "";
+            //        output += "(" + point[0] + ", " + point[1] + ")";
+            //    }
+            //
+            //    console.log(output);
+            //}
+            this.tessellate(left, right, top, this.storage, 1, Math.log2(this.maxDepth));
+        },
 
-                    // Get new array indices.
-                    var newIndX = (currentBeginning[0] + currentEnd[0]) / 2,
-                        newIndY = (currentBeginning[1] + currentEnd[1]) / 2,
-                        newInd = [newIndX, newIndY];
+        /**
+         * Tessellates a given triangle recursively
+         * @param l {int[]}
+         * @param r {int[]}
+         * @param c {int[]}
+         * @param storage {Storage}
+         * @param depth {int}
+         * @param maxDepth {int}
+         */
+        tessellate: function (l, r, c, storage, depth, maxDepth) {
+            if (depth > maxDepth) return; // Stop recursive call.
 
-                    // Calculate new values at the respective half point.
-                    var currentBeginningVal = this.storage.get(currentBeginning),
-                        currentEndVal = this.storage.get(currentEnd);
+            // Get values at each point.
+            var cv = this.storage.get(c),
+                lv = this.storage.get(l),
+                rv = this.storage.get(r);
 
-                    var newMiddleX = (currentBeginningVal[0] + currentEndVal[0]) / 2,
-                        newMiddleY = (currentBeginningVal[1] + currentEndVal[1]) / 2;
+            // Calculate all half point indices.
+            var hl = util.midPoint(c, l), // hl stands for half-left.
+                hr = util.midPoint(c, r),
+                hc = util.midPoint(l, r);
 
-                    this.storage.set(newIndX, newIndY, newMiddleX, newMiddleY);
+            // Calculate all half point indices.
+            var hlv = util.midPoint(cv, lv),// hlv stands for half-left-value.
+                hrv = util.midPoint(cv, rv),
+                hcv = util.midPoint(lv, rv);
 
-                    // Add new vertices.
-                    newVerticesToSplit.push([newInd, currentBeginning]);
-                    newVerticesToSplit.push([newInd, currentEnd]);
-                }
+            // Write half points to storage.
+            this.storage.set(hl, hlv);
+            this.storage.set(hr, hrv);
+            this.storage.set(hc, hcv);
 
-                // Copy over new vertex list.
-                currentVerticesToSplit = newVerticesToSplit;
-
-                // Increase the depth.
-                currentDepth++;
-            }
+            // Recursive call.
+            depth++;
+            this.tessellate(hl, hr, c, storage, depth, maxDepth); // Central triangle in peak.
+            this.tessellate(l, hc, hl, storage, depth, maxDepth); // Left triangle.
+            this.tessellate(hc, r, hr, storage, depth, maxDepth); // Right triangle.
+            this.tessellate(hl, hr, hc, storage, depth, maxDepth); // Central triangle in body.
         },
 
         /**
@@ -125,11 +141,11 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
         convertVertexArray: function () {
             this.triangles = [];
 
-            //this.applyRotation(this.mappingFunctions.nonTessellatedTwist);
-            this.mappedStorage = this.storage;
+            this.applyRotation(this.mappingFunctions.nonTessellatedTwist, this.storage, this.mappedStorage);
+            //this.mappedStorage = this.storage;
 
             // Create path. path variable is array of x and y components, adding first point. Working correctly.
-            var path = [this.storage.get(0, 0, true), this.storage.get(0, 0, false)];
+            var path = [this.mappedStorage.get(0, 0, true), this.mappedStorage.get(0, 0, false)];
             var lastIJ = [0, 0];
             for (var i = 0; i < this.storage.getMaxLayerIndex(); i++) {
                 var useStageI = (i % 2 == 0);
@@ -168,20 +184,16 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
                 for (var k = j; k >= 0; k--) {
                     // To bottom right of (i, j).
                     path.push(storage.get(i + 1, k + 1, true), storage.get(i + 1, k + 1, false));
-                    console.log("(" + (i + 1) + ", " + (k + 1) + ")");
 
                     // To bottom left.
                     path.push(storage.get(i + 1, k, true), storage.get(i + 1, k, false));
-                    console.log("(" + (i + 1) + ", " + (k) + ")");
 
                     // Back to (i, k).
                     path.push(storage.get(i, k, true), storage.get(i, k, false));
-                    console.log("(" + i + ", " + k + ")");
 
                     if (k > 0) {
                         // Move to left.
                         path.push(storage.get(i, k - 1, true), storage.get(i, k - 1, false));
-                        console.log("(" + i + ", " + (k - 1) + ")");
                     }
                 }
 
@@ -199,17 +211,14 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
             stageII: function (i, j, path, storage) {
                 // Add current (i, j) to path.
                 path.push(storage.get(i, j, true), storage.get(i, j, false));
-                console.log("(" + i + ", " + j + ")");
 
                 // Max j (i.e. element index) in layer with index i is i.
                 for (var k = 0; k < i; k++) {
                     // Connect to top-right of (i, j).
                     path.push(storage.get(i - 1, k, true), storage.get(i - 1, k, false));
-                    console.log("(" + (i - 1) + ", " + k + ")");
 
                     // Connect to right element of (i, j).
                     path.push(storage.get(i, k + 1, true), storage.get(i, k + 1, false));
-                    console.log("(" + i + ", " + (k + 1) + ")");
                 }
 
                 return [i, i];
@@ -221,8 +230,8 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
          */
         init: function () {
             // Register triangles.
-            this.setTesselationRate(2);
-            this.setRotationAngle(0);
+            this.setTesselationRate(5);
+            this.setRotationAngle(20);
             this.registerTriangle(0.8, 0, 0, 0);
             // Set colour.
             this.setColor(100, 120, 255);
@@ -293,7 +302,6 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
         setTesselationRate: function (ratio) {
             this.maxDepth = Math.pow(2, ratio);
 
-            // TODO update the size of the storage to be created
             var size = (this.maxDepth + 1) * (this.maxDepth + 2) / 2;
             this.storage = new Storage(size);
             this.mappedStorage = new Storage(size);
@@ -330,11 +338,11 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
          * Apply the mapping function to each coordinate pair in the storage object, and store it in the mappedStorage Array.
          * @param mappingFunction {mappingFunction} A function taking two number
          */
-        applyRotation: function (mappingFunction) {
+        applyRotation: function (mappingFunction, storage, mappedStorage) {
             // Apply mappingFunction to each coordinate pair.
-            for (var i = 0; i < this.storage.getLength() * 2; i += 2) {
-                var left = this.storage.getItem(i),
-                    right = this.storage.getItem(i + 1);
+            for (var i = 0; i < storage.getLength() * 2; i += 2) {
+                var left = storage.getItem(i),
+                    right = storage.getItem(i + 1);
 
                 // Map the value.
                 var mappedCoord = mappingFunction(left, right);
@@ -342,8 +350,8 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
                 right = mappedCoord[1];
 
                 // Write value back to rotationStorage.
-                this.mappedStorage.setItem(i, left);
-                this.mappedStorage.setItem(i + 1, right);
+                mappedStorage.setItem(i, left);
+                mappedStorage.setItem(i + 1, right);
             }
         },
 
@@ -382,4 +390,6 @@ define(["./storage", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash
     TriangleHelper.mappingFunctions.nonTessellatedTwist = TriangleHelper.mappingFunctions.nonTessellatedTwist.bind(TriangleHelper);
     TriangleHelper.mappingFunctions.tesselatedTwist = TriangleHelper.mappingFunctions.tesselatedTwist.bind(TriangleHelper);
     TriangleHelper.init();
+
+    return TriangleHelper;
 });
