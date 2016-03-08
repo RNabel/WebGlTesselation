@@ -1,7 +1,7 @@
 /**
  * Created by robin on 06/03/16.
  */
-define(["./storage", "./util", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash"], function (Storage, util, initShaders, mv, webgl_utils, _) {
+define(["./storage", "./util", "lib/initShaders", "lib/MV", "lib/webgl-utils", "lib/lodash", "lib/jquery", "lib/materialize"], function (Storage, util, initShaders, mv, webgl_utils, _, $) {
     var TriangleHelper = {
         isWireFrame: true,
         triangles: [],
@@ -219,7 +219,7 @@ define(["./storage", "./util", "lib/initShaders", "lib/MV", "lib/webgl-utils", "
          */
         init: function () {
             // Register triangles.
-            this.setTesselationRate(4);
+            this.setTesselationRate(2);
             this.setRotationAngle(20);
             this.registerTriangle(0.8, 0, 0, 0);
             // Set colour.
@@ -379,6 +379,12 @@ define(["./storage", "./util", "lib/initShaders", "lib/MV", "lib/webgl-utils", "
     TriangleHelper.mappingFunctions.nonTessellatedTwist = TriangleHelper.mappingFunctions.nonTessellatedTwist.bind(TriangleHelper);
     TriangleHelper.mappingFunctions.tesselatedTwist = TriangleHelper.mappingFunctions.tesselatedTwist.bind(TriangleHelper);
     TriangleHelper.init();
+
+    $('.button-collapse').sideNav({
+        menuWidth: 300, // Default is 240
+        edge: 'right', // Choose the horizontal origin
+        closeOnClick: true // Closes side-nav on <a> clicks, useful for Angular/Meteor
+    });
 
     return TriangleHelper;
 });
