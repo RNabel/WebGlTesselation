@@ -7,7 +7,10 @@
 requirejs.config({
     baseUrl: 'app',
     paths : {
-        'lib': '../lib'
+        'lib': '../lib',
+        'lodash': "../lib/lodash",
+        'jquery': "../lib/jquery",
+        'hammerjs': "../lib/hammer"
     }
 });
 

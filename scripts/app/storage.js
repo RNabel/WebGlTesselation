@@ -3,7 +3,7 @@
  */
 define(function (require) {
 
-    var _ = require('lib/lodash');
+    var _ = require('lodash');
     var Storage = function (size) {
         this._storage = [];
         this.size = size;

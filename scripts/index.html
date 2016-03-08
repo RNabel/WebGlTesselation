@@ -12,6 +12,13 @@
         }
 
 
+
+
+
+
+
+
+
     </script>
     <script id="fragment-shader" type="x-shader/x-fragment">
         precision mediump float;
@@ -20,6 +27,13 @@
         void main(){
             gl_FragColor = u_color;
         }
+
+
+
+
+
+
+
 
 
     </script>
@@ -33,7 +47,7 @@
 <body style="position: relative;">
 
 <div class="container">
-    <h1 class="row">Super awesome title</h1>
+    <h1 class="row">Triangle Tessellation</h1>
     <div class="row">
         <div class="col s9">
             <canvas id="gl-canvas" width="500px" height="500px" class="center-align">
@@ -41,34 +55,68 @@
             </canvas>
         </div>
 
-    </div>
-    <!-- Side bar with controls. -->
-    <nav>
-        <ul id="slide-out" class="side-nav">
-            <li><a href="#!">First Sidebar Link</a></li>
-            <li><a href="#!">Second Sidebar Link</a></li>
-        </ul>
-        <a href="#" data-activates="slide-out" class="button-collapse"><i class="mdi-navigation-menu"></i></a>
-        <div class="side-nav">
-            <!--Switch for wire grid, tessellation level, color(?), turn-->
+        <!--Switch for wire grid, tessellation level, color(?), turn-->
+        <div class="col s3">
             <p>
                 Wireframe:
             </p>
             <div class="switch">
                 <label>
                     Off
-                    <input type="checkbox">
+                    <input type="checkbox" id="isWireframe" checked>
                     <span class="lever"></span>
                     On
                 </label>
             </div>
 
-            <p class="range-field">
-                <input type="range" id="test5" min="0" max="100"/>
+            <p>
+                Twist:
             </p>
+            <div class="switch">
+                <label>
+                    Off
+                    <input type="checkbox" id="useTwist" checked>
+                    <span class="lever"></span>
+                    On
+                </label>
+            </div>
+
+            <p>
+                Tessellation grade:
+            </p>
+            <form>
+                <p class="range-field">
+                    <input type="range" id="tessellationGrade" min="0" max="10" value="0"/>
+                    <label id="tessellationGradeLabel">Current tessellation grade: 0</label>
+                </p>
+            </form>
+
+            <p>
+                Rotation Angle:
+            </p>
+            <form>
+                <p class="range-field">
+                    <input type="range" id="rotationAngle" min="0" max="720" value="0"/>
+                    <label id="rotAngleLabel">Current rotation angle: 0</label>
+                </p>
+            </form>
+
+
+            <div id="rotationCoefficientForm">
+                <p>
+                    Rotation coefficient:
+                </p>
+                <form>
+                    <p class="range-field">
+                        <input type="range" id="rotationCoefficient" min="0" max="100" value="0"/>
+                        <label id="rotCoeffLabel">Current rotation coefficient: 0</label>
+                    </p>
+                </form>
+            </div>
         </div>
-    </nav>
+    </div>
 </div>
+
 
 </body>
 <!-- Include other scripts here. -->
